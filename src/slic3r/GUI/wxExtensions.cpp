@@ -7,6 +7,7 @@
 #include <cstddef>
 #include "libslic3r/Utils.hpp"
 #include "slic3r/GUI/Widgets/PopupWindow.hpp"
+#include <set>
 #include <stdexcept>
 #include <cmath>
 
@@ -482,7 +483,14 @@ wxBitmap create_scaled_bitmap(  const std::string& bmp_name_in,
     Slic3r::GUI::wxGetApp().dark_mode();
 
     // Try loading an SVG first, then PNG if SVG was not found:
-    wxBitmap *bmp = cache.load_svg(bmp_name, width, height, grayscale, dark_mode, new_color, resize ? em_unit(win) * 0.1f : 0.f);
+    // Remember the icons that have no SVG, so they don't try to open it again on every request.
+    static std::set<std::string> no_svg;
+    wxBitmap *bmp = nullptr;
+    if (no_svg.count(bmp_name) == 0) {
+        bmp = cache.load_svg(bmp_name, width, height, grayscale, dark_mode, new_color, resize ? em_unit(win) * 0.1f : 0.f);
+        if (bmp == nullptr)
+            no_svg.insert(bmp_name);
+    }
     if (bmp == nullptr) {
         bmp = cache.load_png(bmp_name, width, height, grayscale, resize ? wxWindow::FromDIP(10, win) * 0.1f : 0.f);
     }

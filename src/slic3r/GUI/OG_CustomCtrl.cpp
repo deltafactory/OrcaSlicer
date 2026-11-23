@@ -383,6 +383,14 @@ void OG_CustomCtrl::OnMotion(wxMouseEvent& event)
 
     bool suppress_hyperlinks = false;
 
+    // Only the hovered label is drawn differently, so repaint only when it changes
+    CtrlLine* was_focused = nullptr;
+    for (CtrlLine& line : ctrl_lines) {
+        if (line.is_focused && !was_focused)
+            was_focused = &line;
+        line.is_focused = false;
+    }
+
     for (CtrlLine& line : ctrl_lines) {
         if (!line.is_visible) continue;
         line.is_focused = is_point_in_rect(pos, line.rect_label);
@@ -462,8 +470,10 @@ void OG_CustomCtrl::OnMotion(wxMouseEvent& event)
         this->SetToolTip(tooltip);
     // BBS
 
-    Refresh();
-    Update();
+    if (focusedLine != was_focused) {
+        Refresh();
+        Update();
+    }
     event.Skip();
 }
 
@@ -516,14 +526,19 @@ void OG_CustomCtrl::OnLeftDown(wxMouseEvent& event)
 
 void OG_CustomCtrl::OnLeaveWin(wxMouseEvent& event)
 {
-    for (CtrlLine& line : ctrl_lines)
+    bool was_focused = false;
+    for (CtrlLine& line : ctrl_lines) {
+        was_focused |= line.is_focused;
         line.is_focused = false;
+    }
 
     // BBS: markdown tip
     MarkdownTip::ShowTip("", "", {});
 
-    Refresh();
-    Update();
+    if (was_focused) {
+        Refresh();
+        Update();
+    }
     event.Skip();
 }
 
@@ -822,6 +837,9 @@ void OG_CustomCtrl::CtrlLine::render_separator(wxDC& dc, wxCoord v_pos)
 
 void OG_CustomCtrl::CtrlLine::render(wxDC& dc, wxCoord h_pos, wxCoord v_pos)
 {
+    // draw_edit_bmp() adds the icon's rect again on every paint
+    rects_edit_icon.clear();
+
     if (is_separator()) {
         render_separator(dc, v_pos);
         return;

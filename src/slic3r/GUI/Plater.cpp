@@ -8490,12 +8490,14 @@ void Plater::priv::select_view(const std::string& direction)
     if (current_panel == view3D) {
         BOOST_LOG_TRIVIAL(info) << __FUNCTION__ << __LINE__ << "select view3D";
         view3D->select_view(direction);
-        wxGetApp().update_ui_from_settings();
+        // Only the camera type needs restoring; the settings tabs have nothing to update
+        update_ui_from_settings();
     }
     else if (current_panel == preview) {
         BOOST_LOG_TRIVIAL(info) << "select preview";
         preview->select_view(direction);
-        wxGetApp().update_ui_from_settings();
+        // Only the camera type needs restoring; the settings tabs have nothing to update
+        update_ui_from_settings();
     }
     else if (current_panel == assemble_view) {
         BOOST_LOG_TRIVIAL(info) << "select assemble view";
