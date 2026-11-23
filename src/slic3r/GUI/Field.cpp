@@ -1516,6 +1516,17 @@ using choice_ctrl = ::ComboBox; // BBS
 
 static std::map<std::string, DynamicList*> dynamic_lists;
 
+// Whether resources/images has an icon for this choice value. Every choice field asks for each
+// of its items whenever a settings page is built, so the file system query is done once.
+static bool has_choice_icon(const std::string &icon_name)
+{
+    static std::map<std::string, bool> cache;
+    auto it = cache.find(icon_name);
+    if (it == cache.end())
+        it = cache.emplace(icon_name, boost::filesystem::exists(boost::filesystem::path(resources_dir()) / "images" / (icon_name + ".svg"))).first;
+    return it->second;
+}
+
 void Choice::register_dynamic_list(std::string const &optname, DynamicList *list) { dynamic_lists.emplace(optname, list); }
 
 void DynamicList::update()
@@ -1605,11 +1616,9 @@ void Choice::BUILD()
 		} else {
 			// Append localized enum_labels
             int i = 0;
-            boost::filesystem::path image_path(Slic3r::resources_dir());
-            image_path /= "images";
             for (auto el : m_opt.enum_labels) {
                 auto icon_name = "param_" + m_opt.enum_values[i];
-                if (boost::filesystem::exists(image_path / (icon_name + ".svg"))) {
+                if (has_choice_icon(icon_name)) {
                     ScalableBitmap bm(temp, icon_name, 24);
 				    temp->Append(_(el), bm.bmp());
                 } else {
@@ -2057,13 +2066,11 @@ void Choice::msw_rescale()
         field->SetSelection(idx);
 #else
     if (!m_opt.enum_labels.empty()) {
-        boost::filesystem::path image_path(Slic3r::resources_dir());
-        image_path /= "images";
         int i = 0;
         auto temp = dynamic_cast<choice_ctrl *>(window);
         for (auto el : m_opt.enum_values) {
             auto icon_name = "param_" + m_opt.enum_values[i];
-            if (boost::filesystem::exists(image_path / (icon_name + ".svg"))) {
+            if (has_choice_icon(icon_name)) {
                 ScalableBitmap bm(window, icon_name, 24);
                 temp->SetItemBitmap(i, bm.bmp());
             }
