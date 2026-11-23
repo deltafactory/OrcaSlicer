@@ -57,6 +57,7 @@
 #include <wx/dcgraph.h>
 #include <wx/font.h>
 #include <wx/numformatter.h>
+#include <wx/app.h>
 #include <wx/settings.h>
 #include <wx/string.h>
 #include <wx/textctrl.h>
@@ -932,6 +933,9 @@ void free_window(wxWindow *win)
     win->Reparent(wxGetApp().mainframe);
     if (win->GetClientData())
         reinterpret_cast<std::deque<wxWindow *>*>(win->GetClientData())->push_back(win);
+    else
+        // Not from a Builder pool, so nothing reuses it. Deferred, as this can run from one of its own event handlers.
+        wxTheApp->ScheduleForDestruction(win);
 #else
     delete win;
 #endif
